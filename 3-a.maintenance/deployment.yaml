@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rollouts-demo
+  namespace: default
+  labels:
+    app: rollouts-demo
+spec:
+  minReadySeconds: 10
+  revisionHistoryLimit: 1
+  progressDeadlineSeconds: 60
+  strategy:
+    rollingUpdate:
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: rollouts-demo
+  template:
+    metadata:
+      labels:
+        app: rollouts-demo
+        istio-injection: enabled
+      annotations:
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+        - name: rollouts-demo
+          image: stefanprodan/podinfo:5.1.2
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: http-metrics
+              containerPort: 9797
+              protocol: TCP
+          command:
+            - ./podinfo
+            - --port=8080
+            - --port-metrics=9797
+            - --grpc-service-name=podinfo
+            - --level=info
+            - --random-delay=false
+            - --random-error=false
+          env:
+            - name: PODINFO_UI_COLOR
+              value: "#34577c"
+          resources:
+            requests:
+              memory: 320Mi
+              cpu: 500m
+            limits:
+              memory: 320Mi
+              cpu: 500m
